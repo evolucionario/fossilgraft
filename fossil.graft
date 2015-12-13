@@ -1,0 +1,73 @@
+#####################################################
+### ADD AN EXTINCT LINEAGE TO A PHYLOGENETIC TREE ###
+#####################################################
+
+### Author ###
+# Santiago Claramunt
+# E-mail: claramunt.bio@gmail.com
+
+### Details ###
+
+#This function attaches a new branch to a phylogenetic tree using information about the age of a fossil and the clade to which it belongs. It uses functions in the package "ape".
+
+### Usage ###
+
+fossil.graft(phy, tip, fossil, fossil.age, edge.rel.length=0.5)
+
+### Arguments ###
+
+# phy				an object of class "phylo"
+
+# tip				a vector of mode numeric or character specifying the clade to which the new lineage belongs to. See ape function getMRCA for details.
+
+# fossil			a character string specifying the name of the new lineage (e.g. the name of the fossil)
+
+# fossil.age		the age of the fossil
+
+# edge.rel.length	a value between 0 an 1 specifying the relative length of the new branch in relation to the time of origin of the clade (0) and the age of the fossi (1).
+
+
+### FUNCTION ###
+
+fossil.graft <- function(phy, tip, fossil, fossil.age, edge.rel.length=0.5) {
+
+	# Identify the edge where the new branch will be attached to
+
+	if(length(tip) == 1) {
+		tip0 <- which(phy$tip.label == tip) 
+		mrcaage0 <- 0
+		}
+	else {
+		tip0 <- getMRCA(phy, tip=tip)
+		mrcaage0 <- branching.times(phy)[as.character(tip0)]
+		}
+
+	edge0 <- which(phy$edge[,2] == tip0)
+	
+	length0 <- phy$edge.length[edge0]
+
+	ageofo0 <- mrcaage0 + length0
+
+	# Create a new branch in which the branch length length1 is calculated so that fossil attaches in between its age and the time of origin of the parent lineage (controlled by edge.rel.length option).
+
+	length1 <- (ageofo0-fossil.age)*edge.rel.length
+
+	edge1 <- compute.brlen(stree(1, tip.label=fossil), length1)
+
+	# Graft the branch into the tree:
+	# The trick is to calculate the position so the fossil keeps its true age; which is the fossil age plus its branch length (minus mra age if the branch is not terminal)
+		
+	position <- fossil.age + length1 - mrcaage0
+		
+	new.tree <- bind.tree(phy, edge1, where=tip0, position=position)
+	
+	return(new.tree)
+}
+
+
+### Examples ###
+
+
+### References ###
+
+# Claramunt, S. & J. L. Cracraft. 2015. A new time tree reveals Earth history’s imprint on the evolution of modern birds. Science Advances 1:e1501005.
